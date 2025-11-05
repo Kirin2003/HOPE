@@ -17,7 +17,10 @@ class Status(Enum):
     OUTBOUND = 4
     OUTTIME = 5
 
-
+"""
+用于描述车辆（或智能体）状态
+封装了车辆的位置、姿态、运动参数，并提供了碰撞检测所需的边界计算功能。
+"""
 class State:
     def __init__(self, raw_state: list):
         self.loc: Point = Point(raw_state[:2])
@@ -30,9 +33,13 @@ class State:
             self.steering: float = raw_state[4]
 
     def create_box(self) -> LinearRing:
+        # 计算航向角的正余弦（用于旋转矩阵）
         cos_theta = np.cos(self.heading)
         sin_theta = np.sin(self.heading)
+        # 构建仿射变换矩阵：[cosθ, -sinθ, sinθ, cosθ, x, y]
+        # 前4个元素是旋转+缩放，后2个是平移（车辆位置）
         mat = [cos_theta, -sin_theta, sin_theta, cos_theta, self.loc.x, self.loc.y]
+        # 对基准车辆轮廓（VehicleBox）应用仿射变换，得到当前姿态下的边界框
         return affine_transform(VehicleBox, mat)
 
     def get_pos(self,):

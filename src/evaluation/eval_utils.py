@@ -12,8 +12,74 @@ from tqdm import trange
 from env.vehicle import Status
 from env.map_level import get_map_level
 from configs import *
+import os
+from shapely.geometry import LinearRing
 
-def eval(env, agent, episode=2000, log_path='', multi_level=False, post_proc_action=True):
+def save_parking_map(env, save_path=None, show_trajectory=None, episode_idx=None):
+    """
+    保存泊车地图为图片
+
+    Args:
+        env: 环境对象，包含地图信息
+        save_path: 保存路径，如果为None则不保存
+        show_trajectory: 轨迹点列表[(x, y), ...]，可选
+        episode_idx: 回合索引，用于文件命名
+    """
+    plt.figure(figsize=(10, 10))
+
+    # 绘制障碍物
+    for obs in env.map.obstacles:
+        # LinearRing 直接使用 coords，Polygon 使用 exterior.coords
+        if isinstance(obs.shape, LinearRing):
+            obs_coords = np.array(obs.shape.coords[:-1])  # 移除重复的第一个点
+        else:
+            obs_coords = np.array(obs.shape.exterior.coords[:-1])  # 移除重复的第一个点
+        plt.fill(obs_coords[:, 0], obs_coords[:, 1], color='gray', alpha=0.7)
+
+    # 绘制起点
+    start_coords = np.array(env.map.start.create_box().coords[:-1])
+    plt.fill(start_coords[:, 0], start_coords[:, 1], color='green', alpha=0.8, label='Start')
+
+    # 绘制终点
+    dest_coords = np.array(env.map.dest.create_box().coords[:-1])
+    plt.fill(dest_coords[:, 0], dest_coords[:, 1], color='red', alpha=0.8, label='Destination')
+
+    # 如果有轨迹，绘制轨迹
+    if show_trajectory is not None and len(show_trajectory) > 0:
+        trajectory = np.array(show_trajectory)
+        plt.plot(trajectory[:, 0], trajectory[:, 1], 'b-', linewidth=2, alpha=0.6, label='Trajectory')
+        plt.plot(trajectory[0, 0], trajectory[0, 1], 'bo', markersize=8, label='Start Point')
+        plt.plot(trajectory[-1, 0], trajectory[-1, 1], 'ro', markersize=8, label='End Point')
+
+    # 设置图形属性
+    plt.axis('equal')
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+
+    # 设置标题
+    case_type = "Bay Parking" if env.map.case_id == 0 else "Parallel Parking"
+    plt.title(f'Parking Map - Case {env.map.case_id} ({case_type})')
+
+    # 如果提供了保存路径，则保存图片
+    if save_path is not None:
+        # 确保目录存在
+        os.makedirs(save_path, exist_ok=True)
+
+        # 生成文件名
+        if episode_idx is not None:
+            filename = f'map_episode_{episode_idx:03d}_case_{env.map.case_id}.png'
+        else:
+            filename = f'map_case_{env.map.case_id}.png'
+
+        filepath = os.path.join(save_path, filename)
+        plt.savefig(filepath, dpi=150, bbox_inches='tight')
+        print(f'地图已保存至: {filepath}')
+        plt.close()
+    else:
+        # 不保存，只显示
+        plt.show()
+
+def eval(env, agent, episode=10, log_path='', multi_level=False, post_proc_action=True, save_map=True, save_trajectory=True, map_save_path=None, trajectory_save_path=None):
 
     succ_rate_case = DefaultDict(list)
     if multi_level:
@@ -28,6 +94,16 @@ def eval(env, agent, episode=2000, log_path='', multi_level=False, post_proc_act
     path_length_record = DefaultDict(list)
     eval_record = []
 
+    # 如果需要保存地图或轨迹，创建保存目录
+    map_save_path = ''
+    trajectory_save_path = ''
+    if save_map:
+        map_save_path = log_path + '/saved_maps'
+        os.makedirs(map_save_path, exist_ok=True)
+    if save_trajectory:
+        trajectory_save_path = log_path + './saved_trajectories'
+        os.makedirs(trajectory_save_path, exist_ok=True)
+
     for i in trange(episode):
         obs = env.reset(i+1)
         agent.reset()
@@ -37,21 +113,29 @@ def eval(env, agent, episode=2000, log_path='', multi_level=False, post_proc_act
         path_length = 0
         last_xy = (env.vehicle.state.loc.x, env.vehicle.state.loc.y)
         last_obs = obs['target']
+        # 记录轨迹点
+        trajectory = [(env.vehicle.state.loc.x, env.vehicle.state.loc.y)]
         while not done:
             step_num += 1
             if post_proc_action:
                 action, _ = agent.choose_action(obs)
             else:
                 action, _ = agent.get_action(obs)
+            # 避免智能体在“卡住原地不动”
             if (last_obs == obs['target']).all():
                 action = env.action_space.sample()
             last_obs = obs['target']
             next_obs, reward, done, info = env.step(action)
             total_reward += reward
             obs = next_obs
+            # path_length表示泊车轨迹长度
+            # np.linalg.norm(np.array(last_xy)-np.array((env.vehicle.state.loc.x, env.vehicle.state.loc.y)))是当前一步移动的距离（欧式距离）
+            # 记录轨迹点
+            trajectory.append((env.vehicle.state.loc.x, env.vehicle.state.loc.y))
             path_length += np.linalg.norm(np.array(last_xy)-np.array((env.vehicle.state.loc.x, env.vehicle.state.loc.y)))
             last_xy = (env.vehicle.state.loc.x, env.vehicle.state.loc.y)
-            
+
+            # 如果环境规划器给出了一条可行路径，则将其提供给 RL agent
             if info['path_to_dest'] is not None:
                 agent.set_planner_path(info['path_to_dest'])
             if done:
@@ -59,6 +143,14 @@ def eval(env, agent, episode=2000, log_path='', multi_level=False, post_proc_act
                     succ_record.append(1)
                 else:
                     succ_record.append(0)
+
+        # 回合结束后保存地图和轨迹（如果需要）
+        if save_map or save_trajectory:
+            # 优先使用 map_save_path，如果没有则使用 trajectory_save_path
+            if save_map and map_save_path:
+                save_parking_map(env, save_path=map_save_path, show_trajectory=trajectory if save_trajectory else None, episode_idx=i)
+            elif save_trajectory and trajectory_save_path:
+                save_parking_map(env, save_path=trajectory_save_path, show_trajectory=trajectory, episode_idx=i)
 
         reward_record.append(total_reward)
         succ_rate_case[env.map.case_id].append(succ_record[-1])
@@ -131,6 +223,10 @@ def eval(env, agent, episode=2000, log_path='', multi_level=False, post_proc_act
         f_record = open(log_path+'/record.data', 'wb')
         pickle.dump(eval_record, f_record)
         f_record.close()
+
+        import json
+        with open('eval_record.json', 'w', encoding='utf-8') as f:
+            json.dump(eval_record, f, indent=4, ensure_ascii=False)
 
         f_record_txt = open(log_path+'/result.txt', 'w', newline='')
         f_record_txt.write('success rate: %s\n'%np.mean(succ_record))

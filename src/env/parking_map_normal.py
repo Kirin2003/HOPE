@@ -1,6 +1,7 @@
-
+import math
 import sys
 sys.path.append("../")
+sys.path.append(".")
 from math import pi, cos, sin
 import os
 
@@ -30,6 +31,15 @@ def random_uniform_num(clip_low, clip_high):
     rand_num = random()*(clip_high - clip_low) + clip_low
     return rand_num
 
+"""
+在一个扇形区域内随机生成一个点坐标
+即：以 (origin_x, origin_y) 为圆心，从：
+  角度范围：[angle_min, angle_max]
+  半径范围：[radius_min, radius_max]
+中按照高斯随机的方式采样一个位置(rand_pos_x, rand_pos_y)。
+  rand_pos_x = origin_x + r * cos(angle)
+  rand_pos_y = origin_y + r * sin(angle)
+"""
 def get_rand_pos(origin_x, origin_y, angle_min, angle_max, radius_min, radius_max):
     angle_mean = (angle_max+angle_min)/2
     angle_std = (angle_max-angle_min)/4
@@ -73,9 +83,14 @@ def generate_bay_parking_case(map_level):
         plt.axis('off')
 
     # generate dest
+    # 泊车终点的角度，单位是弧度
     dest_yaw = random_gaussian_num(pi/2, pi/36, pi*5/12, pi*7/12)
     rb, _, _, lb  = list(State([origin[0], origin[1], dest_yaw, 0, 0]).create_box().coords)[:-1]
+    # rb 和 lb 是 车体后边的两个角，min(rb[1], lb[1]) 给出 车体在 y 轴方向最靠负方向的点。
+    # 再取 -min(...) 就变成“为了让车完全不跌出 y=0 以下，至少需要把车向 +y 方向移动这么远”。
+    # 然后加上 MIN_DIST_TO_OBST = 预留一点和墙/障碍之间的最小安全距离。
     min_dest_y = -min(rb[1], lb[1]) + MIN_DIST_TO_OBST
+    # (dest_x,dest_y)是终点坐标
     dest_x = origin[0]
     dest_y = random_gaussian_num(min_dest_y+0.4, 0.2, min_dest_y, min_dest_y+0.8)
     car_rb, car_rf, car_lf, car_lb  = list(State([dest_x, dest_y, dest_yaw, 0, 0]).create_box().coords)[:-1]
@@ -90,13 +105,15 @@ def generate_bay_parking_case(map_level):
     if random()<prob_huge_obst: # generate simple obstacle
         max_dist_to_obst = max_lateral_space/5*4
         min_dist_to_obst = max_lateral_space/5*1
+        # 左边障碍物的右前角
         left_obst_rf = get_rand_pos(*car_lf, pi*11/12, pi*13/12, min_dist_to_obst, max_dist_to_obst)
+        # 左边障碍物的右后角
         left_obst_rb = get_rand_pos(*car_lb, pi*11/12, pi*13/12, min_dist_to_obst, max_dist_to_obst)
-        obstacle_left = LinearRing(( 
+        obstacle_left = LinearRing((
             left_obst_rf,
-            left_obst_rb, 
-            (origin[0]-bay_half_len, origin[1]), 
-            (origin[0]-bay_half_len, left_obst_rf[1])))
+            left_obst_rb,
+            (origin[0]-bay_half_len, origin[1]), # 左边障碍物的左后方 TODO 不理解
+            (origin[0]-bay_half_len, left_obst_rf[1]))) # 左边障碍物的左前方
     else: # generate another vehicle as obstacle on left
         max_dist_to_obst = max_lateral_space/5*4
         min_dist_to_obst = max_lateral_space/5*1
@@ -124,10 +141,10 @@ def generate_bay_parking_case(map_level):
     if random()<prob_huge_obst: # generate simple obstacle
         right_obst_lf = get_rand_pos(*car_rf, -pi/12, pi/12, min_dist_to_obst, max_dist_to_obst)
         right_obst_lb = get_rand_pos(*car_rb, -pi/12, pi/12, min_dist_to_obst, max_dist_to_obst)
-        obstacle_right = LinearRing(( 
+        obstacle_right = LinearRing((
             (origin[0]+bay_half_len, right_obst_lf[1]),
-            (origin[0]+bay_half_len, origin[1]), 
-            right_obst_lb, 
+            (origin[0]+bay_half_len, origin[1]),
+            right_obst_lb,
             right_obst_lf))
     else: # generate another vehicle as obstacle on right
         right_car_x = origin[0] + (WIDTH + random_uniform_num(min_dist_to_obst, max_dist_to_obst))
@@ -136,7 +153,7 @@ def generate_bay_parking_case(map_level):
         min_right_car_y = -min(rb[1], lb[1]) + MIN_DIST_TO_OBST
         right_car_y = random_gaussian_num(min_right_car_y+0.4, 0.2, min_right_car_y, min_right_car_y+0.8)
         obstacle_right = State([right_car_x, right_car_y, right_car_yaw, 0, 0]).create_box()
-        
+
         # generate other parking vehicle
         for _ in range(n_non_critical_car):
             right_car_x += (WIDTH + MIN_DIST_TO_OBST + random_uniform_num(min_dist_to_obst, max_dist_to_obst))
@@ -163,16 +180,16 @@ def generate_bay_parking_case(map_level):
     max_obstacle_y = max([np.max(np.array(obs.coords)[:,1]) for obs in obstacles])+MIN_DIST_TO_OBST
     other_obstcales = []
     if random()<0.2: # in this case only a wall will be generate
-        other_obstcales = [LinearRing(( 
+        other_obstcales = [LinearRing((
         (origin[0]-bay_half_len, bay_PARK_WALL_DIST+max_obstacle_y+MIN_DIST_TO_OBST),
-        (origin[0]+bay_half_len, bay_PARK_WALL_DIST+max_obstacle_y+MIN_DIST_TO_OBST), 
-        (origin[0]+bay_half_len, bay_PARK_WALL_DIST+max_obstacle_y+MIN_DIST_TO_OBST+0.1), 
+        (origin[0]+bay_half_len, bay_PARK_WALL_DIST+max_obstacle_y+MIN_DIST_TO_OBST),
+        (origin[0]+bay_half_len, bay_PARK_WALL_DIST+max_obstacle_y+MIN_DIST_TO_OBST+0.1),
         (origin[0]-bay_half_len, bay_PARK_WALL_DIST+max_obstacle_y+MIN_DIST_TO_OBST+0.1)))]
     else:
-        other_obstacle_range = LinearRing(( 
+        other_obstacle_range = LinearRing((
         (origin[0]-bay_half_len, bay_PARK_WALL_DIST+max_obstacle_y),
-        (origin[0]+bay_half_len, bay_PARK_WALL_DIST+max_obstacle_y), 
-        (origin[0]+bay_half_len, bay_PARK_WALL_DIST+max_obstacle_y+8), 
+        (origin[0]+bay_half_len, bay_PARK_WALL_DIST+max_obstacle_y),
+        (origin[0]+bay_half_len, bay_PARK_WALL_DIST+max_obstacle_y+8),
         (origin[0]-bay_half_len, bay_PARK_WALL_DIST+max_obstacle_y+8)))
         valid_obst_x_range = (origin[0]-bay_half_len+2, origin[0]+bay_half_len-2)
         valid_obst_y_range = (bay_PARK_WALL_DIST+max_obstacle_y+2, bay_PARK_WALL_DIST+max_obstacle_y+6)
@@ -200,7 +217,7 @@ def generate_bay_parking_case(map_level):
         for obs in obstacles:
             ax.add_patch(plt.Polygon(xy=list(obs.coords), color='gray'))
 
-    
+
     # generate start position
     start_box_valid = False
     valid_start_x_range = (origin[0]-bay_half_len/2, origin[0]+bay_half_len/2)
@@ -228,7 +245,7 @@ def generate_bay_parking_case(map_level):
     for obs in obstacles:
         if random()<DROUP_OUT_OBST:
             obstacles.remove(obs)
-    
+
     if DEBUG:
         ax.add_patch(plt.Polygon(xy=list(State([start_x, start_y, start_yaw, 0, 0]).create_box().coords), color='g'))
         print(generate_success)
@@ -238,7 +255,7 @@ def generate_bay_parking_case(map_level):
             fig = plt.gcf()
             fig.savefig(path+f'image_{num_files}.png')
         plt.clf()
-    
+
     if generate_success:
         return [start_x, start_y, start_yaw], [dest_x, dest_y, dest_yaw], obstacles
     else:
@@ -516,11 +533,12 @@ class ParkingMapNormal(object):
 if __name__ == '__main__':
     import time
     t = time.time()
-    for _ in range(10):
-        generate_bay_parking_case()
+    generate_bay_parking_case('Normal')
+    # for _ in range(10):
+    #     generate_bay_parking_case('Normal')
     print('generate time:', time.time()-t)
 
-    t = time.time()
-    for _ in range(10):
-        generate_parallel_parking_case()
-    print('generate time:', time.time()-t)
+    # t = time.time()
+    # for _ in range(10):
+    #     generate_parallel_parking_case()
+    # print('generate time:', time.time()-t)

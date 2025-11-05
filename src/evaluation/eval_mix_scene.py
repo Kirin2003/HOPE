@@ -24,8 +24,8 @@ if __name__=="__main__":
 
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('ckpt_path', type=str, default=None) # './model/ckpt/HOPE_SAC0.pt'
-    parser.add_argument('--eval_episode', type=int, default=2000)
+    parser.add_argument('--ckpt_path', type=str, default='./model/ckpt/HOPE_SAC0.pt')
+    parser.add_argument('--eval_episode', type=int, default=10)
     parser.add_argument('--verbose', type=bool, default=True)
     parser.add_argument('--visualize', type=bool, default=True)
     args = parser.parse_args()
@@ -34,12 +34,14 @@ if __name__=="__main__":
     print('ckpt path: ',checkpoint_path)
     verbose = args.verbose
 
+    # 准备测试环境（地图和障碍物）
     if args.visualize:
         raw_env = CarParking(fps=100, verbose=verbose)
     else:
         raw_env = CarParking(fps=100, verbose=verbose, render_mode='rgb_array')
     env = CarParkingWrapper(raw_env)
 
+    # 记录日志，从配置文件里读取agent类型
     relative_path = '.'
     current_time = time.localtime()
     timestamp = time.strftime("%Y%m%d_%H%M%S", current_time)
@@ -74,6 +76,7 @@ if __name__=="__main__":
     }
     print('observation_space:',env.observation_space)
 
+    # 被测算法，RL_agent+RS_planner
     rl_agent = Agent_type(configs)
     if checkpoint_path is not None:
         rl_agent.load(checkpoint_path, params_only=True)
@@ -84,34 +87,36 @@ if __name__=="__main__":
     parking_agent = ParkingAgent(rl_agent, rs_planner)
 
     eval_episode = args.eval_episode
+    # PPO 评估用随机动作（需要后处理如采样），SAC 评估用确定性动作（均值）
     choose_action = True if isinstance(rl_agent, PPO) else False
     with torch.no_grad():
         # eval on extreme
+        # env.set_level()只设置难度等级，在eval()里个episode前会调用env.reset()生成符合该难度的环境数据
         env.set_level('Extrem')
         log_path = save_path+'/extreme'
         if not os.path.exists(log_path):
             os.makedirs(log_path)
         eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action)
 
-        # eval on dlp
-        env.set_level('dlp')
-        log_path = save_path+'/dlp'
-        if not os.path.exists(log_path):
-            os.makedirs(log_path)
-        eval(env, parking_agent, episode=eval_episode, log_path=log_path, multi_level=True, post_proc_action=choose_action)
-        
-        # eval on complex
-        env.set_level('Complex')
-        log_path = save_path+'/complex'
-        if not os.path.exists(log_path):
-            os.makedirs(log_path)
-        eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action)
-        
-        # eval on normalize
-        env.set_level('Normal')
-        log_path = save_path+'/normalize'
-        if not os.path.exists(log_path):
-            os.makedirs(log_path)
-        eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action)
+        # # eval on dlp
+        # env.set_level('dlp')
+        # log_path = save_path+'/dlp'
+        # if not os.path.exists(log_path):
+        #     os.makedirs(log_path)
+        # eval(env, parking_agent, episode=eval_episode, log_path=log_path, multi_level=True, post_proc_action=choose_action)
+        #
+        # # eval on complex
+        # env.set_level('Complex')
+        # log_path = save_path+'/complex'
+        # if not os.path.exists(log_path):
+        #     os.makedirs(log_path)
+        # eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action)
+        #
+        # # eval on normalize
+        # env.set_level('Normal')
+        # log_path = save_path+'/normalize'
+        # if not os.path.exists(log_path):
+        #     os.makedirs(log_path)
+        # eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action)
 
     env.close()
