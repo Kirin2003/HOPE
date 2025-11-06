@@ -9,6 +9,8 @@ from typing import Optional, Union
 import math
 from typing import OrderedDict
 import random
+import os
+from datetime import datetime
 
 import numpy as np
 import gym
@@ -46,13 +48,14 @@ class CarParking(gym.Env):
     }
 
     def __init__(
-        self, 
+        self,
         render_mode: str = None,
         fps: int = FPS,
-        verbose: bool =True, 
+        verbose: bool =True,
         use_lidar_observation: bool =USE_LIDAR,
         use_img_observation: bool=USE_IMG,
         use_action_mask: bool=USE_ACTION_MASK,
+        video_path: str = None,
     ):
         super().__init__()
 
@@ -80,6 +83,19 @@ class CarParking(gym.Env):
         self.reward = 0.0
         self.prev_reward = 0.0
         self.accum_arrive_reward = 0.0
+
+        # Video writer initialization
+        self.video_writer = None
+        self.episode_num = 0
+        self.frame_count = 0
+        self.video_path = video_path
+        if SAVE_VIDEO:
+            try:
+                import cv2
+                self.cv2 = cv2
+            except ImportError:
+                print("Warning: OpenCV not installed. Video saving will be disabled.")
+                print("Install with: pip install opencv-python")
 
         self.action_space = spaces.Box(
             np.array([VALID_STEER[0], VALID_SPEED[0]]).astype(np.float32),
@@ -124,7 +140,37 @@ class CarParking(gym.Env):
         elif self.level == 'dlp':
             self.map = ParkingMapDLP()
 
+    def _init_video_writer(self):
+        """Initialize a new video writer for the current episode."""
+        if not SAVE_VIDEO or not hasattr(self, 'cv2'):
+            return
+
+        # Close previous video if exists
+        if self.video_writer is not None:
+            self.video_writer.release()
+            self.video_writer = None
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"episode_{self.episode_num:04d}_{timestamp}.mp4"
+
+        filepath = os.path.join(self.video_path, filename)
+
+        # Create video writer
+        fourcc = self.cv2.VideoWriter_fourcc(*'mp4v')
+        self.video_writer = self.cv2.VideoWriter(
+            filepath,
+            fourcc,
+            VIDEO_FPS,
+            (WIN_W, WIN_H)
+        )
+
     def reset(self, case_id: int = None, data_dir: str = None, level: str = None,) -> np.ndarray:
+        # Start new episode and create new video
+        self.episode_num += 1
+        self.frame_count = 0  # 重置帧计数
+        if SAVE_VIDEO and hasattr(self, 'cv2'):
+            self._init_video_writer()
+
         self.reward = 0.0
         self.prev_reward = 0.0
         self.accum_arrive_reward = 0.0
@@ -318,6 +364,22 @@ class CarParking(gym.Env):
                 vehicle_box = self.vehicle.trajectory[-(render_len-i)].create_box()
                 pygame.draw.polygon(
                     surface, TRAJ_COLORS[-(render_len-i)], self._coord_transform(vehicle_box))
+
+        # Save frame to video if video_writer is initialized
+        if SAVE_VIDEO and hasattr(self, 'cv2') and self.video_writer is not None:
+            self.frame_count += 1
+            # Convert pygame surface to numpy array
+            frame = self.cv2.flip(
+                self.cv2.transpose(
+                    self.cv2.cvtColor(
+                        self.cv2.transpose(pygame.surfarray.array3d(surface)),
+                        self.cv2.COLOR_RGB2BGR
+                    )
+                ),
+                0
+            )
+            # Write frame to video
+            self.video_writer.write(frame)
 
     def _get_img_observation(self, surface: pygame.Surface):
         angle = self.vehicle.state.heading
@@ -534,6 +596,11 @@ class CarParking(gym.Env):
         return True
 
     def close(self):
+        # Release video writer
+        if self.video_writer is not None:
+            self.video_writer.release()
+            self.video_writer = None
+
         if self.screen is not None:
             pygame.display.quit()
             self.is_open = False

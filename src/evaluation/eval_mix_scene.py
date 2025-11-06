@@ -34,20 +34,23 @@ if __name__=="__main__":
     print('ckpt path: ',checkpoint_path)
     verbose = args.verbose
 
-    # 准备测试环境（地图和障碍物）
-    if args.visualize:
-        raw_env = CarParking(fps=100, verbose=verbose)
-    else:
-        raw_env = CarParking(fps=100, verbose=verbose, render_mode='rgb_array')
-    env = CarParkingWrapper(raw_env)
-
-    # 记录日志，从配置文件里读取agent类型
     relative_path = '.'
     current_time = time.localtime()
     timestamp = time.strftime("%Y%m%d_%H%M%S", current_time)
     save_path = relative_path+'/log/eval/%s/' % timestamp
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
+    os.makedirs(save_path, exist_ok=True)
+    video_path = save_path + '/videos'
+    os.makedirs(video_path, exist_ok=True)
+
+    # 准备测试环境（地图和障碍物）
+    if args.visualize:
+        raw_env = CarParking(fps=100, verbose=verbose, video_path=video_path)
+    else:
+        raw_env = CarParking(fps=100, verbose=verbose, render_mode='rgb_array', video_path=video_path)
+    env = CarParkingWrapper(raw_env)
+
+    # 记录日志，从配置文件里读取agent类型
+    
     configs_file = os.path.join(save_path, 'configs.txt')
     Agent_type = PPO if 'ppo' in checkpoint_path.lower() else SAC
     writer = SummaryWriter(save_path)
@@ -95,29 +98,25 @@ if __name__=="__main__":
         # env.set_level()只设置难度等级，在eval()里个episode前会调用env.reset()生成符合该难度的环境数据
         env.set_level('Extrem')
         log_path = save_path+'/extreme'
-        if not os.path.exists(log_path):
-            os.makedirs(log_path)
+        os.makedirs(log_path, exist_ok=True)
         eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action, save_map=True, save_trajectory=True)
 
         # # eval on dlp
         # env.set_level('dlp')
         # log_path = save_path+'/dlp'
-        # if not os.path.exists(log_path):
-        #     os.makedirs(log_path)
+        # os.makedirs(log_path, exist_ok=True)
         # eval(env, parking_agent, episode=eval_episode, log_path=log_path, multi_level=True, post_proc_action=choose_action, save_map=True, save_trajectory=True)
         #
         # # eval on complex
         # env.set_level('Complex')
         # log_path = save_path+'/complex'
-        # if not os.path.exists(log_path):
-        #     os.makedirs(log_path)
+        # os.makedirs(log_path, exist_ok=True)
         # eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action, save_map=True, save_trajectory=True)
         #
         # # eval on normalize
         # env.set_level('Normal')
         # log_path = save_path+'/normalize'
-        # if not os.path.exists(log_path):
-        #     os.makedirs(log_path)
+        # os.makedirs(log_path, exist_ok=True)
         # eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action, save_map=True, save_trajectory=True)
 
     env.close()

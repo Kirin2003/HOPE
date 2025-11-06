@@ -104,6 +104,10 @@ K = 12 # the render scale
 RS_MAX_DIST = 10
 RENDER_TRAJ = True
 
+# video save configuration
+SAVE_VIDEO = True
+VIDEO_FPS = 100
+
 # action mask
 PRECISION = 10
 step_speed = 1

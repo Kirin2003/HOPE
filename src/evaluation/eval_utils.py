@@ -60,27 +60,8 @@ def save_parking_map(env, save_path=None, show_trajectory=None, episode_idx=None
     # 设置标题，包含泊车结果
     case_type = "Bay Parking" if env.map.case_id == 0 else "Parallel Parking"
 
-    # 将 Status 枚举转换为可读的字符串
-    result_text = ""
-    if result is not None:
-        if result == Status.ARRIVED:
-            result_text = " - SUCCESS"
-            title_color = 'green'
-        elif result == Status.COLLIDED:
-            result_text = " - COLLISION"
-            title_color = 'red'
-        elif result == Status.OUTBOUND:
-            result_text = " - STUCK/OUTBOUND"
-            title_color = 'orange'
-        elif result == Status.OUTTIME:
-            result_text = " - TIMEOUT"
-            title_color = 'purple'
-        else:
-            result_text = f" - {result.name}"
-            title_color = 'black'
-
-    title = f'Parking Map - Case {env.map.case_id} ({case_type}){result_text}'
-    plt.title(title, color=title_color, fontsize=12, fontweight='bold')
+    title = f'Parking Map - Case {env.map.case_id} ({case_type}) - {result.name}'
+    plt.title(title, fontsize=12, fontweight='bold')
 
     # 如果提供了保存路径，则保存图片
     if save_path is not None:
