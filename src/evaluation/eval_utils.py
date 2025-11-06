@@ -166,7 +166,7 @@ def eval(env, agent, episode=10, log_path='', multi_level=False, post_proc_actio
                 else:
                     succ_record.append(0)
 
-        # 回合结束后保存地图和轨迹（如果需要）
+        # 回合结束后保存地图和轨迹
         if save_map or save_trajectory:
             # 优先使用 map_save_path，如果没有则使用 trajectory_save_path
             if save_map and map_save_path:
@@ -265,5 +265,21 @@ def eval(env, agent, episode=10, log_path='', multi_level=False, post_proc_actio
                 f_record_txt.write('step num: %s '%np.mean(step_record[k])+'+-(%s)\n'%np.std(step_record[k]))
                 f_record_txt.write('path length: %s '%np.mean(path_length_record[k])+'+-(%s)\n'%np.std(path_length_record[k]))
         f_record_txt.close()
-    
+
+        status_count = {}
+        for record in eval_record:
+            status_name = record['status']
+            status_count[status_name] = status_count.get(status_name, 0) + 1
+
+        import csv
+        with open(log_path+'/result.csv', 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['ARRIVED', 'COLLIDED', 'OUTBOUND', 'OUTTIME'])
+            writer.writerow([
+                status_count.get('ARRIVED', 0),
+                status_count.get('COLLIDED', 0),
+                status_count.get('OUTBOUND', 0),
+                status_count.get('OUTTIME', 0)
+            ])
+
     return np.mean(succ_record)
