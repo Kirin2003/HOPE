@@ -191,7 +191,7 @@ def eval(env, agent, episode=10, log_path='', multi_level=False, post_proc_actio
         if succ_record[-1] == 1:
             success_step_record.append(step_num)
         eval_record.append({'case_id':env.map.case_id,
-                            'status':info['status'],
+                            'status':info['status'].name,
                             'step_num':step_num,
                             'reward':total_reward,
                             'path_length':path_length,
@@ -247,7 +247,7 @@ def eval(env, agent, episode=10, log_path='', multi_level=False, post_proc_actio
         f_record.close()
 
         import json
-        with open('eval_record.json', 'w', encoding='utf-8') as f:
+        with open(log_path+'/eval_record.json', 'w', encoding='utf-8') as f:
             json.dump(eval_record, f, indent=4, ensure_ascii=False)
 
         f_record_txt = open(log_path+'/result.txt', 'w', newline='')

@@ -25,7 +25,7 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--ckpt_path', type=str, default='./model/ckpt/HOPE_SAC0.pt')
-    parser.add_argument('--eval_episode', type=int, default=10)
+    parser.add_argument('--eval_episode', type=int, default=2)
     parser.add_argument('--verbose', type=bool, default=True)
     parser.add_argument('--visualize', type=bool, default=True)
     args = parser.parse_args()
@@ -49,14 +49,15 @@ if __name__=="__main__":
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     configs_file = os.path.join(save_path, 'configs.txt')
-    with open(configs_file, 'w') as f:
-        f.write(str(checkpoint_path))
     Agent_type = PPO if 'ppo' in checkpoint_path.lower() else SAC
     writer = SummaryWriter(save_path)
     print("You can track the training process by command 'tensorboard --log-dir %s'" % save_path)
 
-    seed = SEED
-    # env.seed(seed)
+    # seed = SEED
+    seed = int(time.time())
+    with open(configs_file, 'w') as f:
+        f.write('checkpoint_path: '+str(checkpoint_path))
+        f.write('\nseed: '+str(seed))
     env.action_space.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
