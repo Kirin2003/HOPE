@@ -96,27 +96,27 @@ if __name__=="__main__":
         log_path = save_path+'/extreme'
         if not os.path.exists(log_path):
             os.makedirs(log_path)
-        eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action)
+        eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action, save_map=True, save_trajectory=True)
 
         # # eval on dlp
         # env.set_level('dlp')
         # log_path = save_path+'/dlp'
         # if not os.path.exists(log_path):
         #     os.makedirs(log_path)
-        # eval(env, parking_agent, episode=eval_episode, log_path=log_path, multi_level=True, post_proc_action=choose_action)
+        # eval(env, parking_agent, episode=eval_episode, log_path=log_path, multi_level=True, post_proc_action=choose_action, save_map=True, save_trajectory=True)
         #
         # # eval on complex
         # env.set_level('Complex')
         # log_path = save_path+'/complex'
         # if not os.path.exists(log_path):
         #     os.makedirs(log_path)
-        # eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action)
+        # eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action, save_map=True, save_trajectory=True)
         #
         # # eval on normalize
         # env.set_level('Normal')
         # log_path = save_path+'/normalize'
         # if not os.path.exists(log_path):
         #     os.makedirs(log_path)
-        # eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action)
+        # eval(env, parking_agent, episode=eval_episode, log_path=log_path, post_proc_action=choose_action, save_map=True, save_trajectory=True)
 
     env.close()

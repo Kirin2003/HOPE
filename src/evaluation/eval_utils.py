@@ -15,7 +15,7 @@ from configs import *
 import os
 from shapely.geometry import LinearRing
 
-def save_parking_map(env, save_path=None, show_trajectory=None, episode_idx=None):
+def save_parking_map(env, save_path=None, show_trajectory=None, episode_idx=None, result=None):
     """
     保存泊车地图为图片
 
@@ -24,6 +24,7 @@ def save_parking_map(env, save_path=None, show_trajectory=None, episode_idx=None
         save_path: 保存路径，如果为None则不保存
         show_trajectory: 轨迹点列表[(x, y), ...]，可选
         episode_idx: 回合索引，用于文件命名
+        result: 泊车结果（Status枚举），可选
     """
     plt.figure(figsize=(10, 10))
 
@@ -56,9 +57,30 @@ def save_parking_map(env, save_path=None, show_trajectory=None, episode_idx=None
     plt.grid(True, alpha=0.3)
     plt.legend()
 
-    # 设置标题
+    # 设置标题，包含泊车结果
     case_type = "Bay Parking" if env.map.case_id == 0 else "Parallel Parking"
-    plt.title(f'Parking Map - Case {env.map.case_id} ({case_type})')
+
+    # 将 Status 枚举转换为可读的字符串
+    result_text = ""
+    if result is not None:
+        if result == Status.ARRIVED:
+            result_text = " - SUCCESS"
+            title_color = 'green'
+        elif result == Status.COLLIDED:
+            result_text = " - COLLISION"
+            title_color = 'red'
+        elif result == Status.OUTBOUND:
+            result_text = " - STUCK/OUTBOUND"
+            title_color = 'orange'
+        elif result == Status.OUTTIME:
+            result_text = " - TIMEOUT"
+            title_color = 'purple'
+        else:
+            result_text = f" - {result.name}"
+            title_color = 'black'
+
+    title = f'Parking Map - Case {env.map.case_id} ({case_type}){result_text}'
+    plt.title(title, color=title_color, fontsize=12, fontweight='bold')
 
     # 如果提供了保存路径，则保存图片
     if save_path is not None:
@@ -79,7 +101,7 @@ def save_parking_map(env, save_path=None, show_trajectory=None, episode_idx=None
         # 不保存，只显示
         plt.show()
 
-def eval(env, agent, episode=10, log_path='', multi_level=False, post_proc_action=True, save_map=True, save_trajectory=True, map_save_path=None, trajectory_save_path=None):
+def eval(env, agent, episode=10, log_path='', multi_level=False, post_proc_action=True, save_map=False, save_trajectory=False, map_save_path=None, trajectory_save_path=None):
 
     succ_rate_case = DefaultDict(list)
     if multi_level:
@@ -148,9 +170,9 @@ def eval(env, agent, episode=10, log_path='', multi_level=False, post_proc_actio
         if save_map or save_trajectory:
             # 优先使用 map_save_path，如果没有则使用 trajectory_save_path
             if save_map and map_save_path:
-                save_parking_map(env, save_path=map_save_path, show_trajectory=trajectory if save_trajectory else None, episode_idx=i)
+                save_parking_map(env, save_path=map_save_path, show_trajectory=trajectory if save_trajectory else None, episode_idx=i, result=info['status'])
             elif save_trajectory and trajectory_save_path:
-                save_parking_map(env, save_path=trajectory_save_path, show_trajectory=trajectory, episode_idx=i)
+                save_parking_map(env, save_path=trajectory_save_path, show_trajectory=trajectory, episode_idx=i, result=info['status'])
 
         reward_record.append(total_reward)
         succ_rate_case[env.map.case_id].append(succ_record[-1])
