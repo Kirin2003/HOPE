@@ -99,13 +99,9 @@ def eval(env, agent, episode=10, log_path='', multi_level=False, post_proc_actio
 
     # 如果需要保存地图或轨迹，创建保存目录
     map_save_path = ''
-    trajectory_save_path = ''
     if save_map:
         map_save_path = log_path + '/saved_maps'
         os.makedirs(map_save_path, exist_ok=True)
-    if save_trajectory:
-        trajectory_save_path = log_path + './saved_trajectories'
-        os.makedirs(trajectory_save_path, exist_ok=True)
 
     for i in trange(episode):
         obs = env.reset(i+1)
@@ -161,13 +157,9 @@ def eval(env, agent, episode=10, log_path='', multi_level=False, post_proc_actio
                             })
 
         # 回合结束后保存地图和轨迹
-        if save_map or save_trajectory:
-            # 优先使用 map_save_path，如果没有则使用 trajectory_save_path
-            if save_map and map_save_path:
-                save_parking_map(env, save_path=map_save_path, show_trajectory=trajectory if save_trajectory else None, episode_idx=i, result=info['status'])
-            elif save_trajectory and trajectory_save_path:
-                save_parking_map(env, save_path=trajectory_save_path, show_trajectory=trajectory, episode_idx=i, result=info['status'])
-
+        if info['status']!= Status.ARRIVED:
+            save_parking_map(env, save_path=map_save_path, show_trajectory=trajectory, episode_idx=i, result=info['status'])
+            
         reward_record.append(total_reward)
         succ_rate_case[env.map.case_id].append(succ_record[-1])
         if step_num < 200:
