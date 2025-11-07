@@ -145,7 +145,20 @@ def eval(env, agent, episode=10, log_path='', multi_level=False, post_proc_actio
                 if info['status']==Status.ARRIVED:
                     succ_record.append(1)
                 else:
+                    # debug
+                    done = True
                     succ_record.append(0)
+                    # 如果泊车失败，保存视频（仅当启用按需视频保存时）
+                    if hasattr(env, 'save_video_on_failure_only') and env.save_video_on_failure_only:
+                        env.save_recorded_frames_to_video()
+
+                    eval_record.append({'case_id':env.map.case_id,
+                            'status':info['status'].name,
+                            'step_num':step_num,
+                            'reward':total_reward,
+                            'path_length':path_length,
+                            'episode_num': i + 1
+                            })
 
         # 回合结束后保存地图和轨迹
         if save_map or save_trajectory:
@@ -171,12 +184,6 @@ def eval(env, agent, episode=10, log_path='', multi_level=False, post_proc_actio
             step_record[env.map.case_id].append(step_num)
         if succ_record[-1] == 1:
             success_step_record.append(step_num)
-        eval_record.append({'case_id':env.map.case_id,
-                            'status':info['status'].name,
-                            'step_num':step_num,
-                            'reward':total_reward,
-                            'path_length':path_length,
-                            })
 
     print('#'*15)
     print('EVALUATE RESULT:')

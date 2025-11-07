@@ -56,6 +56,7 @@ class CarParking(gym.Env):
         use_img_observation: bool=USE_IMG,
         use_action_mask: bool=USE_ACTION_MASK,
         video_path: str = None,
+        save_video_on_failure_only: bool = False,
     ):
         super().__init__()
 
@@ -89,6 +90,9 @@ class CarParking(gym.Env):
         self.episode_num = 0
         self.frame_count = 0
         self.video_path = video_path
+        self.save_video_on_failure_only = save_video_on_failure_only
+        self.recorded_frames = []  # 记录所有帧（用于按需保存模式）
+
         if SAVE_VIDEO:
             try:
                 import cv2
@@ -164,11 +168,44 @@ class CarParking(gym.Env):
             (WIN_W, WIN_H)
         )
 
+    def save_recorded_frames_to_video(self):
+        """将记录的帧保存为视频文件（用于失败案例）"""
+        if not SAVE_VIDEO or not hasattr(self, 'cv2') or not self.recorded_frames:
+            return
+
+        # 关闭之前的视频写入器（如果存在）
+        if self.video_writer is not None:
+            self.video_writer.release()
+            self.video_writer = None
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # 在文件名中标记这是失败案例
+        filename = f"episode_{self.episode_num:04d}_FAILURE_{timestamp}.mp4"
+        filepath = os.path.join(self.video_path, filename)
+
+        # Create video writer
+        fourcc = self.cv2.VideoWriter_fourcc(*'mp4v')
+        self.video_writer = self.cv2.VideoWriter(
+            filepath,
+            fourcc,
+            VIDEO_FPS,
+            (WIN_W, WIN_H)
+        )
+
+        # 写入所有记录的帧
+        for frame in self.recorded_frames:
+            self.video_writer.write(frame)
+
+        print(f'失败案例视频已保存至: {filepath}')
+
     def reset(self, case_id: int = None, data_dir: str = None, level: str = None,) -> np.ndarray:
-        # Start new episode and create new video
+        # Start new episode
         self.episode_num += 1
         self.frame_count = 0  # 重置帧计数
-        if SAVE_VIDEO and hasattr(self, 'cv2'):
+        self.recorded_frames = []  # 清空帧记录
+
+        # 如果不是按需保存模式（即原来的模式），则在reset时初始化视频
+        if SAVE_VIDEO and hasattr(self, 'cv2') and not self.save_video_on_failure_only:
             self._init_video_writer()
 
         self.reward = 0.0
@@ -366,7 +403,7 @@ class CarParking(gym.Env):
                     surface, TRAJ_COLORS[-(render_len-i)], self._coord_transform(vehicle_box))
 
         # Save frame to video if video_writer is initialized
-        if SAVE_VIDEO and hasattr(self, 'cv2') and self.video_writer is not None:
+        if SAVE_VIDEO and hasattr(self, 'cv2'):
             self.frame_count += 1
             # Convert pygame surface to numpy array
             frame = self.cv2.flip(
@@ -378,8 +415,13 @@ class CarParking(gym.Env):
                 ),
                 0
             )
-            # Write frame to video
-            self.video_writer.write(frame)
+
+            # 如果是按需保存模式，记录帧
+            if self.save_video_on_failure_only:
+                self.recorded_frames.append(frame)
+            # 如果是普通模式且视频写入器已初始化，直接写入
+            elif self.video_writer is not None:
+                self.video_writer.write(frame)
 
     def _get_img_observation(self, surface: pygame.Surface):
         angle = self.vehicle.state.heading
@@ -600,6 +642,10 @@ class CarParking(gym.Env):
         if self.video_writer is not None:
             self.video_writer.release()
             self.video_writer = None
+
+        # 如果是按需保存模式，且有未保存的帧（成功案例），清空它们
+        if self.save_video_on_failure_only:
+            self.recorded_frames = []
 
         if self.screen is not None:
             pygame.display.quit()

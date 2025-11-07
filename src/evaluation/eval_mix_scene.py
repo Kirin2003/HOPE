@@ -25,9 +25,9 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--ckpt_path', type=str, default='./model/ckpt/HOPE_SAC0.pt')
-    parser.add_argument('--eval_episode', type=int, default=2)
+    parser.add_argument('--eval_episode', type=int, default=100)
     parser.add_argument('--verbose', type=bool, default=True)
-    parser.add_argument('--visualize', type=bool, default=True)
+    parser.add_argument('--visualize', type=bool, default=False)
     args = parser.parse_args()
 
     checkpoint_path = args.ckpt_path
@@ -44,9 +44,9 @@ if __name__=="__main__":
 
     # 准备测试环境（地图和障碍物）
     if args.visualize:
-        raw_env = CarParking(fps=100, verbose=verbose, video_path=video_path)
+        raw_env = CarParking(fps=100, verbose=verbose, video_path=video_path, save_video_on_failure_only=True)
     else:
-        raw_env = CarParking(fps=100, verbose=verbose, render_mode='rgb_array', video_path=video_path)
+        raw_env = CarParking(fps=100, verbose=verbose, render_mode='rgb_array', video_path=video_path, save_video_on_failure_only=True)
     env = CarParkingWrapper(raw_env)
 
     # 记录日志，从配置文件里读取agent类型
