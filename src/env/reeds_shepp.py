@@ -661,12 +661,3 @@ def check_path(sx, sy, syaw, gx, gy, gyaw, maxc):
 
         for i in range(len(d)):
             assert abs(d[i] - STEP_SIZE) <= 0.001
-
-def plot_arrow(x, y, yaw, length=1.0, width=0.5, fc="r", ec="k"):
-    if isinstance(x, list):
-        for (ix, iy, iyaw) in zip(x, y, yaw):
-            plot_arrow(ix, iy, iyaw)
-    else:
-        plt.arrow(x, y, length * math.cos(yaw), length * math.sin(yaw), fc=fc,
-                  ec=ec, head_width=width, head_length=width)
-        plt.plot(x, y)
