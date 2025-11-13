@@ -61,6 +61,9 @@ class CarParkingWrapper(Wrapper):
             reward_func:callable=reward_shaping,
             observation_func:callable=observation_rescale,
             ):
+        # gym.Wrapper类会把子类传入的obj存储为self.obj
+        # def __init__(self, env):
+        #     self.env = env
         super().__init__(env)
         self.reward_func = reward_func
         self.action_func = action_func
