@@ -219,6 +219,28 @@ class CarParking(gym.Env):
         self.vehicle.reset(initial_state)
         self.matrix = self.coord_transform_matrix()
         return self.step()[0]
+    
+    def reset_with_case(self, case_id: int = None, case_path: str = None, level: str = None,) -> np.ndarray:
+        # Start new episode
+        self.episode_num += 1
+        self.frame_count = 0  # 重置帧计数
+        self.recorded_frames = []  # 清空帧记录
+
+        # 如果不是按需保存模式（即原来的模式），则在reset时初始化视频
+        if SAVE_VIDEO and hasattr(self, 'cv2') and not self.save_video_on_failure_only:
+            self._init_video_writer()
+
+        self.reward = 0.0
+        self.prev_reward = 0.0
+        self.accum_arrive_reward = 0.0
+        self.t = 0.0
+
+        if level is not None:
+            self.set_level(level)
+        initial_state = self.map.reset_with_case(case_id, case_path)
+        self.vehicle.reset(initial_state)
+        self.matrix = self.coord_transform_matrix()
+        return self.step()[0]
 
     def coord_transform_matrix(self) -> list:
         """Get the transform matrix that convert the real world coordinate to the pygame coordinate.

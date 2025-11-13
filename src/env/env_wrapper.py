@@ -87,3 +87,6 @@ class CarParkingWrapper(Wrapper):
         obs = self.env.reset(*args)
         return self.obs_func(obs)
 
+    def reset_with_case(self, *args):
+        obs = self.env.reset_with_case(*args)
+        return self.obs_func(obs)

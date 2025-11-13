@@ -14,6 +14,8 @@ from env.vehicle import State
 from env.map_base import *
 from configs import *
 
+from env.generator import load_case
+
 DEBUG = False
 if DEBUG:
     import matplotlib.pyplot as plt
@@ -495,6 +497,25 @@ class ParkingMapNormal(object):
         else:
             start, dest, obstacles = generate_parallel_parking_case(self.map_level)
             self.case_id = 1
+        
+        self.start = State(start+[0,0])
+        self.start_box = self.start.create_box()
+        self.dest = State(dest+[0,0])
+        self.dest_box = self.dest.create_box()
+        self.xmin = np.floor(min(self.start.loc.x, self.dest.loc.x) - 10)
+        self.xmax = np.ceil(max(self.start.loc.x, self.dest.loc.x) + 10)
+        self.ymin = np.floor(min(self.start.loc.y, self.dest.loc.y) - 10)
+        self.ymax = np.ceil(max(self.start.loc.y, self.dest.loc.y) + 10)
+        self.obstacles = list([Area(shape=obs, subtype="obstacle", \
+            color=(150, 150, 150, 255)) for obs in obstacles])
+        self.n_obstacle = len(self.obstacles)
+
+        return self.start
+    
+    def reset_with_case(self, case_id: int = None, case_path: str = None) -> State:
+        case_data = load_case(case_path)
+        start, dest, obstacles = case_data['start'], case_data['dest'], case_data['obstacles']
+        self.case_id = case_id
         
         self.start = State(start+[0,0])
         self.start_box = self.start.create_box()

@@ -251,8 +251,8 @@ def random_generate(case_idx):
         }
         case_dir = f'{LOG_DIR}/{timestamp}/data'
         os.makedirs(case_dir, exist_ok=True)
-        case_filename = f'{case_dir}/case_{case_idx}.npz'
-        save_case(case_data, case_filename)
+        case_path = f'{case_dir}/case_{case_idx}.npz'
+        save_case(case_data, case_path)
     else:
         # print(1)
         return random_generate(case_idx)
@@ -326,8 +326,8 @@ if __name__ == '__main__':
     # print(f'average time for generation: {gen_time / case_num:.4f} s')
 
     """test visual_case() function, average time: 0.3 s"""
-    case_filename = 'log/eval/20251113_143214/data/case_0.npz'
-    case_data = load_case(case_filename)
+    case_path = 'log/eval/20251113_143214/data/case_0.npz'
+    case_data = load_case(case_path)
     visual_time = time.time()
     visual_case(case_data)
     visual_time = time.time() - visual_time
