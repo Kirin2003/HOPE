@@ -58,9 +58,9 @@ def save_parking_map(env, save_path=None, show_trajectory=None, episode_idx=None
     plt.legend()
 
     # 设置标题，包含泊车结果
-    case_type = "Bay Parking" if env.map.case_id == 0 else "Parallel Parking"
+    # case_type = "Bay Parking" if env.map.case_id == 0 else "Parallel Parking"
 
-    title = f'Parking Map - Case {env.map.case_id} ({case_type}) - {result.name}'
+    title = f'Parking Map - Case {env.map.case_id} - {result.name}'
     plt.title(title, fontsize=12, fontweight='bold')
 
     # 如果提供了保存路径，则保存图片
@@ -95,6 +95,7 @@ def eval_with_case(env, agent, case_dir, log_path='', multi_level=False, post_pr
     step_record = DefaultDict(list)
     path_length_record = DefaultDict(list)
     eval_record = []
+    failed_case_record = []
 
     # 如果需要保存地图或轨迹，创建保存目录
     map_save_path = ''
@@ -159,10 +160,10 @@ def eval_with_case(env, agent, case_dir, log_path='', multi_level=False, post_pr
                             })
 
         # 回合结束后保存地图和轨迹
-        # if info['status']!= Status.ARRIVED:
-        #     save_parking_map(env, save_path=map_save_path, show_trajectory=trajectory, episode_idx=i, result=info['status'])
-            
-        save_parking_map(env, save_path=map_save_path, show_trajectory=trajectory, episode_idx=i, result=info['status'])
+        if info['status']!= Status.ARRIVED:
+            save_parking_map(env, save_path=map_save_path, show_trajectory=trajectory, episode_idx=i, result=info['status'])
+            failed_case_record.append(i)
+        # save_parking_map(env, save_path=map_save_path, show_trajectory=trajectory, episode_idx=i, result=info['status'])
             
         reward_record.append(total_reward)
         succ_rate_case[env.map.case_id].append(succ_record[-1])
@@ -184,6 +185,9 @@ def eval_with_case(env, agent, case_dir, log_path='', multi_level=False, post_pr
     print('#'*15)
     print('EVALUATE RESULT:')
     print('success rate: ', np.mean(succ_record))
+    print('failed cases:', failed_case_record)
+    with open(log_path+"failed_cases.txt", "w") as f:
+        f.write(",".join(map(str, failed_case_record)))
     print('average reward: ', np.mean(reward_record))
     print('-'*10)
     print('success rate per case: ')

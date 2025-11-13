@@ -113,8 +113,8 @@ def plot_car(x, y, yaw):
         car_outline_x.append(converted_xy[0]+x)
         car_outline_y.append(converted_xy[1]+y)
 
-    arrow_x, arrow_y, arrow_yaw = c * 1.5 + x, s * 1.5 + y, yaw
-    plot_arrow(arrow_x, arrow_y, arrow_yaw)
+    # arrow_x, arrow_y, arrow_yaw = c * 1.5 + x, s * 1.5 + y, yaw
+    # plot_arrow(arrow_x, arrow_y, arrow_yaw)
 
     plt.plot(car_outline_x, car_outline_y, car_color)
 
