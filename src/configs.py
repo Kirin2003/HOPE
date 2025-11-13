@@ -199,3 +199,5 @@ CONFIGS_ACTION = {
     'n_action':len(discrete_actions),
     'discrete_actions':discrete_actions
 }
+
+LOG_DIR = './log/eval'
