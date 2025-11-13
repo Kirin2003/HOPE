@@ -9,7 +9,6 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-# from model.MultiModalPPO_AF import PPO
 from model.agent.ppo_agent import PPOAgent as PPO
 from model.agent.sac_agent import SACAgent as SAC
 from model.agent.parking_agent import ParkingAgent, RsPlanner

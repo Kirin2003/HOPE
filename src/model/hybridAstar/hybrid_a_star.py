@@ -18,11 +18,11 @@ sys.path.append("./")
 sys.path.append("../")
 sys.path.append("../../")
 
-from dynamic_programming_heuristic import calc_distance_heuristic
+from model.hybridAstar.dynamic_programming_heuristic import calc_distance_heuristic
 import env.reeds_shepp as rsCurve
-from car import move, check_car_collision, MAX_STEER, WB, plot_car, BUBBLE_R
+from model.hybridAstar.car import move, check_car_collision, MAX_STEER, WB, plot_car, BUBBLE_R
+from configs import *
 
-XY_GRID_RESOLUTION = 2.0  # [m]
 YAW_GRID_RESOLUTION = np.deg2rad(15.0)  # [rad]
 MOTION_RESOLUTION = 0.1  # [m] path interpolate resolution
 N_STEER = 20  # number of steer command
@@ -244,7 +244,7 @@ def calc_rs_path_cost(reed_shepp_path):
     return cost
 
 
-def hybrid_a_star_planning(start, goal, ox, oy, xy_resolution, yaw_resolution):
+def hybrid_a_star_planning(start, goal, ox, oy, xy_resolution=XY_GRID_RESOLUTION, yaw_resolution=YAW_GRID_RESOLUTION):
     """
     start: start node
     goal: goal node
@@ -421,7 +421,7 @@ def main():
     #     plt.axis("equal")
 
     path = hybrid_a_star_planning(
-        start, goal, ox, oy, XY_GRID_RESOLUTION, YAW_GRID_RESOLUTION)
+        start, goal, ox, oy)
 
     x = path.x_list
     y = path.y_list

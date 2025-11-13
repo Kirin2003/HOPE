@@ -7,6 +7,7 @@ from numpy.random import randn, random
 from env.vehicle import State
 from math import pi, cos, sin
 import time
+from configs import *
 
 # params for generating parking case
 prob_huge_obst = 0.5
@@ -313,23 +314,67 @@ def plot_arrow(ax, x, y, yaw, length = 3, width = 2, facecolor = 'r', edgecolor 
                 xytext=(x, y),
                 arrowprops=dict(arrowstyle='->', facecolor=facecolor, edgecolor=edgecolor, lw=width))
 
-def convert_to_grid_map():
-    pass
+def obstacles_to_xy_lists(obstacles, resolution=XY_GRID_RESOLUTION):
+    """
+    将 LinearRing 障碍物列表转换为 x, y 坐标列表
+    障碍物为实心多边形，内部所有栅格点都记录到ox和oy中
+
+    参数:
+        obstacles (list): [obstacle (LinearRing), ...]
+        resolution (float): 栅格分辨率，用于填充多边形内部 [m]
+
+    返回:
+        ox (list): x坐标列表
+        oy (list): y坐标列表
+    """
+    # 使用shapely判断点是否在多边形内部
+    from shapely.geometry import Point, Polygon
+
+    ox, oy = [], []
+
+    for obstacle in obstacles:
+        # 将LinearRing转换为Polygon，这样才能有内部区域
+        polygon = Polygon(obstacle)
+
+        # 获取边界框
+        min_x, min_y = polygon.bounds[0], polygon.bounds[1]
+        max_x, max_y = polygon.bounds[2], polygon.bounds[3]
+
+        # 在边界框内进行栅格化
+        x_grid = np.arange(min_x, max_x + resolution, resolution)
+        y_grid = np.arange(min_y, max_y + resolution, resolution)
+
+        # 对每个栅格点检查是否在多边形内部
+        for x in x_grid:
+            for y in y_grid:
+                # 使用Polygon.contains()判断点是否在多边形内部
+                if polygon.contains(Point(x, y)):
+                    ox.append(x)
+                    oy.append(y)
+
+    return ox, oy
 
 if __name__ == '__main__':
     """test random_generate() function, average time: 0.004s"""
-    # case_num = 10
-    # gen_time = time.time()
-    # for i in range(case_num):
-    #     random_generate(i)
-    # gen_time = time.time() - gen_time
-    # print(f'average time for generation: {gen_time / case_num:.4f} s')
+    case_num = 1000
+    gen_time = time.time()
+    for i in range(case_num):
+        random_generate(i)
+    gen_time = time.time() - gen_time
+    print(f'average time for generation: {gen_time / case_num:.4f} s')
 
     """test visual_case() function, average time: 0.3 s"""
+    # case_path = 'log/eval/20251113_143214/data/case_0.npz'
+    # case_data = load_case(case_path)
+    # visual_time = time.time()
+    # visual_case(case_data)
+    # visual_time = time.time() - visual_time
+    # print(f'average time for generation: {visual_time:.4f} s')
+    
+    """test obstacles_to_xy_lists() function"""
     case_path = 'log/eval/20251113_143214/data/case_0.npz'
     case_data = load_case(case_path)
-    visual_time = time.time()
-    visual_case(case_data)
-    visual_time = time.time() - visual_time
-    print(f'average time for generation: {visual_time:.4f} s')
+    start, dest = case_data['start'], case_data['dest']
+    obstacles = case_data['obstacles']
+    ox, oy = obstacles_to_xy_lists(obstacles)
     
