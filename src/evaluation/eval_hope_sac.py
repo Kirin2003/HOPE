@@ -63,8 +63,8 @@ if __name__ == '__main__':
     rs_planner = RsPlanner(step_ratio)
     parking_agent = ParkingAgent(rl_agent, rs_planner)
 
-    case_dir = 'log/eval/20251114_043028/data'
-    log_path = 'log/eval/20251114_043028/hope_sac'
+    case_dir = 'log/eval/20251113_143214/data'
+    log_path = 'log/eval/20251113_143214/hope_sac'
     os.makedirs(log_path, exist_ok=True)
     with torch.no_grad():
         eval_with_case(env, parking_agent, case_dir=case_dir, log_path=log_path, post_proc_action=choose_action, save_map=True, save_trajectory=True)

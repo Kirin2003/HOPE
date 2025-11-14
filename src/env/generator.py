@@ -481,7 +481,7 @@ def load_case(filename):
     ]
     return case_data
 
-def visual_case(case_data):
+def visual_case(case_data, save_path=None):
     fig=plt.figure()
     ax=fig.add_subplot(111)
     ax.set_xlim(-20,20)
@@ -503,11 +503,12 @@ def visual_case(case_data):
     plot_arrow(ax, start_x, start_y, start_yaw)
     plot_arrow(ax, dest_x, dest_y, dest_yaw)
     
-    path = './log/eval/figure/'
-    os.makedirs(path, exist_ok=True)
-    num_files = len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
+    if not save_path:
+        save_path = './log/eval/figure/'
+        os.makedirs(save_path, exist_ok=True)
+    num_files = len([f for f in os.listdir(save_path) if os.path.isfile(os.path.join(save_path, f))])
     fig = plt.gcf()
-    fig.savefig(path+f'image_{num_files}.png')
+    fig.savefig(save_path+f'image_{num_files}.png')
     plt.clf()
 
 def plot_arrow(ax, x, y, yaw, length = 3, width = 2, facecolor = 'r', edgecolor = 'k'):

@@ -202,4 +202,4 @@ CONFIGS_ACTION = {
 
 LOG_DIR = './log/eval'
 
-XY_GRID_RESOLUTION = 0.2 # [m]
+XY_GRID_RESOLUTION = 0.5 # [m]
