@@ -9,24 +9,26 @@ from env.generator import *
 from configs import *
 from env.generator import visual_case
 from evaluation.monitor import Monitor
-from env.vehicle import State, Status
+from evaluation.monitor import Status
 from evaluation.visual_utils import plot_case, animation_case
-
+from collections import defaultdict
 
 if __name__ == '__main__':
-    case_dir = 'log/eval/20251113_143214/data'
+    case_dir = 'log/eval/20251113_211348/data'
     case_files = [f for f in os.listdir(case_dir) if os.path.isfile(os.path.join(case_dir, f))]
     # episode = len(case_files)
 
-    failed_case_record = []
-    log_path = 'log/eval/20251113_143214/hybridAstar'
+    log_path = 'log/eval/20251113_211348/hybridAstar'
 
     current_time = time.localtime()
     timestamp = time.strftime("%Y%m%d_%H%M%S", current_time)
     save_path = './log/eval/%s/' % timestamp
     # os.makedirs(save_path, exist_ok=True)
-    figure_save_path = f'{log_path}/figure'
+    figure_save_path = f'{log_path}/figure/'
     os.makedirs(figure_save_path, exist_ok=True)
+
+    status_counter = defaultdict(int)
+    failed_case_record = []
 
     episode = 10
 
@@ -44,12 +46,15 @@ if __name__ == '__main__':
         y_list = path.y_list
         yaw_list = path.yaw_list
 
+        # 没有找到可行路径
         if len(x_list) == 0:
             visual_case(case_data, save_path = figure_save_path)
+            status_counter[Status.NOPATH] += 1
         else:
             monitor = Monitor(path, dest, obstacles)
             # failed
             vehicle_status = monitor.check()
+            status_counter[vehicle_status] += 1
             if vehicle_status != Status.ARRIVED:
                 print(f'case {i} failed: {vehicle_status.name}')
                 failed_case_record.append(i)
@@ -58,6 +63,17 @@ if __name__ == '__main__':
     print('#'*15)
     print('success rate: {:.4f}'.format(1 - len(failed_case_record) / episode))
     print('failed cases: ', failed_case_record)
-    with open(log_path+"failed_cases.txt", "w") as f:
+
+    with open(log_path+"/failed_cases.json", "w") as f:
         f.write(",".join(map(str, failed_case_record)))
     
+    import csv
+    with open(log_path+'/result.csv', 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([Status.ARRIVED.name, Status.COLLIDED.name, Status.NOPATH.name, Status.OUTTIME.name])
+        writer.writerow([
+            status_counter[Status.ARRIVED],
+            status_counter[Status.COLLIDED],
+            status_counter[Status.NOPATH],
+            status_counter[Status.OUTTIME]
+        ])

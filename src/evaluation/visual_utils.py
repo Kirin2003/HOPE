@@ -84,8 +84,6 @@ def plot_case(x_list, y_list, yaw_list, obstacles, dest, idx = -1, save_path=Non
     plot_car(dest[0], dest[1], dest[2], color='-r')
     # 车的最后一个姿态（蓝色矩形）
     plot_car(x_list[-1], y_list[-1], yaw_list[-1], color='-b')
-    print(f'dest: {dest[0]}, {dest[1]}, {dest[2]}')
-    print(f'last vehicle shape: {x_list[-1]}, {y_list[-1]}, {yaw_list[-1]}')
     plt.grid(True, alpha=0.3)
     plt.axis("equal")
     plt.legend()
