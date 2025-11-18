@@ -3,7 +3,6 @@ sys.path.append("..")
 sys.path.append(".")
 from typing import DefaultDict
 import pickle
-SAVE_LOG = False
 
 import numpy as np
 import matplotlib.pyplot as plt
