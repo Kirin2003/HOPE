@@ -42,7 +42,9 @@ class Monitor:
         for vehicle in self.vehicle_boxes:
             for obstacle in self.obstacles:
                 if vehicle.intersection(obstacle):
-                    return True
+                    print(f'vehicle coords: {list(vehicle.coords)}')
+                    print(f'obstacle coords: {list(obstacle.coords)}')
+                    return True, vehicle, obstacle
         return False
 
     def detect_outbound(self):
@@ -83,26 +85,29 @@ class Monitor:
             return Status.OUTTIME
         return Status.CONTINUE
 
-def generate_box(x, y, yaw) -> LinearRing:
-    rb, rf, lf, lb  = list(State([x, y, yaw, 0, 0]).create_box().coords)[:-1]
-    box = LinearRing((rb, rf, lf, lb))
-    return box
-
-def check_arrived(x1, y1, yaw1, x2, y2, yaw2):
-    vehicle_polygon = Polygon(generate_box(x2, y2, yaw2))
-    dest_polygon = Polygon(generate_box(x1, y1, yaw1))
-    union_polygon = vehicle_polygon.intersection(dest_polygon)
-    if union_polygon.area / dest_polygon.area > 0.95:
-        return True
-    return False
+def plot_collision(vehicle, obstacle, case_id=-1, figure_save_path=None):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import os
+    plt.figure(figsize=(10, 10))
+    obs_coords = np.array(obstacle[:-1])
+    plt.fill(obs_coords[:, 0], obs_coords[:, 1], color='gray', alpha=0.7)
+    vehicle_coords = np.array(vehicle[:-1])
+    plt.fill(vehicle_coords[:, 0], vehicle_coords[:, 1], color='red', alpha=0.7)
+    plt.grid(True, alpha=0.3)
+    plt.axis("equal")
+    plt.legend()
+    if figure_save_path:
+        filename = f'{case_id}.png'
+        filepath = os.path.join(figure_save_path, filename)
+        plt.savefig(filepath, dpi=150, bbox_inches='tight')
+        print(f'碰撞图已保存至: {filepath}')
+        plt.close()
+    else:
+        plt.show()
 
 if __name__ == '__main__':
-    x1 = 0.0
-    y1 = 1.7086988241602858
-    yaw1 = 1.7687171702022468
-    x2 = -8.881784197001252e-16
-    y2 = 1.708698824160285
-    yaw2 =  1.7687171702022468
-    
-    res = check_arrived(x1, y1, yaw1, x2, y2, yaw2)
-    print(res)
+
+    vehicle = [(1.1547149462734203, 8.577770294481812), (5.756612593856238, 9.482556479816074), (5.382351357278739, 11.386113289263978), (0.7804537096959214, 10.481327103929715), (1.1547149462734203, 8.577770294481812)]
+    obstacle = [(-15.0, 11.363295299983607), (15.0, 11.363295299983607), (15.0, 11.463295299983606), (-15.0, 11.463295299983606), (-15.0, 11.363295299983607)]
+    plot_collision(vehicle, obstacle)
