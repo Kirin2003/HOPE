@@ -17,6 +17,7 @@ class Monitor:
     def __init__(self, path, dest, obstacles):
         self.dest_box = self.generate_box(dest[0], dest[1], dest[2])
         self.obstacles = obstacles
+        self.collision_index = None  # 存储第一个碰撞时刻的索引
 
         self.vehicle_centers = []
         self.vehicle_boxes = []
@@ -45,12 +46,14 @@ class Monitor:
         return False
     
     def detect_collision(self):
+        """检测第一个碰撞时刻，返回(是否有碰撞, 碰撞时刻索引)"""
         if not self.obstacles:
             return False
-        for vehicle in self.vehicle_boxes:
+        for i, vehicle in enumerate(self.vehicle_boxes):
             for obstacle in self.obstacles:
                 if vehicle.intersection(obstacle):
-                    return True, vehicle, obstacle
+                    self.collision_index = i
+                    return True  # 返回第一个碰撞的时刻索引
         return False
 
     def detect_outbound(self):

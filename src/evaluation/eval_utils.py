@@ -105,7 +105,7 @@ def eval_with_case(env, agent, case_dir, log_path='', multi_level=False, post_pr
     case_files = [f for f in os.listdir(case_dir) if os.path.isfile(os.path.join(case_dir, f))]
     episode = len(case_files)
 
-    for i in trange(episode):
+    for i in trange(100):
         obs = env.reset_with_case(i+1, os.path.join(case_dir, case_files[i]))
         agent.reset()
         done = False
@@ -185,7 +185,7 @@ def eval_with_case(env, agent, case_dir, log_path='', multi_level=False, post_pr
     print('EVALUATE RESULT:')
     print('success rate: ', np.mean(succ_record))
     print('failed cases:', failed_case_record)
-    with open(log_path+"failed_cases.txt", "w") as f:
+    with open(log_path+"/failed_cases.txt", "w") as f:
         f.write(",".join(map(str, failed_case_record)))
     print('average reward: ', np.mean(reward_record))
     print('-'*10)

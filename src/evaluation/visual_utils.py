@@ -29,7 +29,7 @@ def rot_mat_2d(angle):
     """
     return Rot.from_euler('z', angle).as_matrix()[0:2, 0:2]
 
-def plot_car(x, y, yaw, color='-k'):
+def plot_car(x, y, yaw, color='k', label=None):
     car_color = color
     c, s = cos(yaw), sin(yaw)
     rot = rot_mat_2d(-yaw)
@@ -42,9 +42,34 @@ def plot_car(x, y, yaw, color='-k'):
     # arrow_x, arrow_y, arrow_yaw = c * 1.5 + x, s * 1.5 + y, yaw
     # plot_arrow(arrow_x, arrow_y, arrow_yaw)
 
-    plt.plot(car_outline_x, car_outline_y, car_color)
+    plt.plot(car_outline_x, car_outline_y, car_color, label=label)
 
-def animation_case(x_list, y_list, yaw_list, ox, oy, case_id, figure_save_path ):
+def plot_case(start, dest, obstacles, title=None, save_path=None):
+    plt.figure(figsize=(10, 10))
+    # 绘制起点
+    start_x, start_y, start_yaw = start
+    plot_car(start_x, start_y, start_yaw, color='g', label='start position')
+    # 绘制目标车位
+    dest_x, dest_y, dest_yaw = dest
+    plot_car(dest_x, dest_y, dest_yaw, color='b', label='target parking lot')
+
+    # 绘制障碍物
+    for obs in obstacles:
+        obs_coords = np.array(obs.coords[:-1])  # 移除重复的第一个点
+        plt.fill(obs_coords[:, 0], obs_coords[:, 1], color='gray', alpha=0.7)
+    
+    plt.grid(True, alpha=0.3)
+    plt.axis("equal")
+    plt.legend()
+    plt.title(title)
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        print(f'save case in: {save_path}')
+        plt.close()
+    else:
+        plt.show()
+
+def animation_planning_result(x_list, y_list, yaw_list, ox, oy, case_id, figure_save_path ):
     start = time.time()
     import matplotlib.animation as animation
     def update_frame(i):
@@ -70,28 +95,32 @@ def animation_case(x_list, y_list, yaw_list, ox, oy, case_id, figure_save_path )
     end = time.time()
     print("animation time:{:.4f} s".format(end-start))
 
-def plot_case(x_list, y_list, yaw_list, obstacles, dest, idx = -1, save_path=None):
+def plot_planning_result(x_list, y_list, yaw_list, obstacles, dest, collision_idx=None, title=None, save_path=None, ):
     plt.figure(figsize=(10, 10))
     # 绘制障碍物
     for obs in obstacles:
         obs_coords = np.array(obs.coords[:-1])  # 移除重复的第一个点
-        
+
         plt.fill(obs_coords[:, 0], obs_coords[:, 1], color='gray', alpha=0.7)
 
-    # 整条轨迹
-    plt.plot(x_list, y_list, "-r", label="Hybrid A* path")
-    # 车位（红色虚线）
-    plot_car(dest[0], dest[1], dest[2], color='-r')
-    # 车的最后一个姿态（蓝色矩形）
-    plot_car(x_list[-1], y_list[-1], yaw_list[-1], color='-b')
+    # 起点（绿色）
+    plot_car(x_list[0], y_list[0], yaw_list[0], color='g', label='start position')
+    # 目标车位（蓝色）
+    plot_car(dest[0], dest[1], dest[2], color='b', label='target parking lot')
+    # 整条轨迹（红色）
+    plt.plot(x_list, y_list, "r", label="planning path")
+
+    # 如果指定了碰撞索引，绘制碰撞时刻的汽车（橙色）
+    if collision_idx is not None and 0 <= collision_idx < len(x_list):
+        plot_car(x_list[collision_idx], y_list[collision_idx], yaw_list[collision_idx], color='orange', label='collision point')
+
     plt.grid(True, alpha=0.3)
     plt.axis("equal")
     plt.legend()
+    plt.title(title)
     if save_path:
-        filename = f'{idx}.png'
-        filepath = os.path.join(save_path, filename)
-        plt.savefig(filepath, dpi=150, bbox_inches='tight')
-        print(f'地图已保存至: {filepath}')
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        print(f'save case in: {save_path}')
         plt.close()
     else:
         plt.show()

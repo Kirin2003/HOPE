@@ -481,7 +481,7 @@ def load_case(filename):
     ]
     return case_data
 
-def visual_case(case_data, save_path=None):
+def visual_case(case_data, title=None, save_path=None):
     fig=plt.figure()
     ax=fig.add_subplot(111)
     ax.set_xlim(-20,20)
