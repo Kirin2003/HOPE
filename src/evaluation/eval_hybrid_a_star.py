@@ -15,7 +15,7 @@ from collections import defaultdict
 if __name__ == '__main__':
     case_dir = 'log/eval/20251114_043028/data'
     case_files = [f for f in os.listdir(case_dir) if os.path.isfile(os.path.join(case_dir, f))]
-    # episode = len(case_files)
+    episode = len(case_files)
 
     log_path = 'log/eval/20251114_043028/hybridAstar'
 
@@ -29,9 +29,9 @@ if __name__ == '__main__':
     status_counter = defaultdict(int)
     failed_case_record = []
 
-    episode = 10
+    # episode = 10
 
-    for i in trange(9,10):
+    for i in trange(episode):
         success = False
         case_path = os.path.join(case_dir, case_files[i])
         case_data = load_case(case_path)

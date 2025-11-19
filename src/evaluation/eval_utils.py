@@ -105,7 +105,7 @@ def eval_with_case(env, agent, case_dir, log_path='', multi_level=False, post_pr
     case_files = [f for f in os.listdir(case_dir) if os.path.isfile(os.path.join(case_dir, f))]
     episode = len(case_files)
 
-    for i in trange(100):
+    for i in trange(episode):
         obs = env.reset_with_case(i+1, os.path.join(case_dir, case_files[i]))
         agent.reset()
         done = False
