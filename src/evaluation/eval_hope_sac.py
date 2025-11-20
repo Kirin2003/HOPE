@@ -20,13 +20,15 @@ from configs import *
 
 if __name__ == '__main__':
     relative_path = '.'
-    current_time = time.localtime()
-    timestamp = time.strftime("%Y%m%d_%H%M%S", current_time)
-    save_path = relative_path+'/log/eval/%s/' % timestamp
-    os.makedirs(save_path, exist_ok=True)
-    video_path = save_path + '/videos'
-    os.makedirs(video_path, exist_ok=True)
+    # current_time = time.localtime()
+    # timestamp = time.strftime("%Y%m%d_%H%M%S", current_time)
+    # save_path = relative_path+'/log/eval/%s/' % timestamp
+    # os.makedirs(save_path, exist_ok=True)
+    # video_path = save_path + '/videos'
+    # os.makedirs(video_path, exist_ok=True)
 
+    video_path = 'log/eval/vertical_complex/hope_sac/videos'
+    os.makedirs(video_path, exist_ok=True)
     # 准备测试环境
     raw_env = CarParking(fps=100, verbose=True, render_mode='rgb_array', video_path=video_path, save_video_on_failure_only=True)
     env = CarParkingWrapper(raw_env)
@@ -63,8 +65,8 @@ if __name__ == '__main__':
     rs_planner = RsPlanner(step_ratio)
     parking_agent = ParkingAgent(rl_agent, rs_planner)
 
-    case_dir = 'log/eval/20251114_043028/data'
-    log_path = 'log/eval/20251114_043028/hope_sac_2'
+    case_dir = 'log/eval/vertical_complex/data'
+    log_path = 'log/eval/vertical_complex/hope_sac'
     os.makedirs(log_path, exist_ok=True)
     with torch.no_grad():
         eval_with_case(env, parking_agent, case_dir=case_dir, log_path=log_path, post_proc_action=choose_action, save_map=True, save_trajectory=True)

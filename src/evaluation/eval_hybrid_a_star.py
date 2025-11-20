@@ -13,23 +13,21 @@ from evaluation.visual_utils import *
 from collections import defaultdict
 
 if __name__ == '__main__':
-    case_dir = 'log/eval/20251114_043028/data'
+    case_dir = 'log/eval/vertical_complex/data'
     case_files = [f for f in os.listdir(case_dir) if os.path.isfile(os.path.join(case_dir, f))]
-    episode = len(case_files)
+    # episode = len(case_files)
 
-    log_path = 'log/eval/20251114_043028/hybridAstar'
-
-    current_time = time.localtime()
-    timestamp = time.strftime("%Y%m%d_%H%M%S", current_time)
-    save_path = './log/eval/%s/' % timestamp
-    # os.makedirs(save_path, exist_ok=True)
+    log_path = 'log/eval/vertical_complex/hybridAstar_2'
+    os.makedirs(log_path, exist_ok=True)
     figure_save_path = f'{log_path}/figure'
     os.makedirs(figure_save_path, exist_ok=True)
 
     status_counter = defaultdict(int)
     failed_case_record = []
 
-    # episode = 10
+    episode = 20
+
+    time1 = 0
 
     for i in trange(episode):
         success = False
@@ -63,7 +61,9 @@ if __name__ == '__main__':
                 title = f'Case_{i}_{vehicle_status.name}'
                 plot_planning_result(x_list, y_list, yaw_list, obstacles, dest, collision_idx=monitor.collision_index, title=title, save_path=f'{figure_save_path}/{title}.png')
 
+    time1 = time.time() - time1
     print('#'*15)
+    print('average time per case: {:.4f}'.format(time1 / episode))
     print('success rate: {:.4f}'.format(1 - len(failed_case_record) / episode))
     print('failed cases: ', failed_case_record)
 
@@ -80,3 +80,16 @@ if __name__ == '__main__':
             status_counter[Status.NOPATH],
             status_counter[Status.OUTTIME]
         ])
+
+    # case_dir = 'log/eval/20251114_043028/data'
+    # case_files = [f for f in os.listdir(case_dir) if os.path.isfile(os.path.join(case_dir, f))]
+    # log_path = 'log/eval/20251114_043028/hybridAstar'
+    # for i in trange(6,11):
+    #     case_path = os.path.join(case_dir, case_files[i])
+    #     case_data = load_case(case_path)
+    #     start, dest, obstacles = case_data['start'], case_data['dest'], case_data['obstacles']
+    #     ox, oy = obstacles_to_xy_lists(obstacles)
+    #     path = hybrid_a_star_planning(start, dest, ox, oy)
+    #     title=f'Grid_Case_{i}'
+    #     plot_planning_result_in_grid_env(path.x_list, path.y_list, path.yaw_list, ox, oy, dest, title=title, save_path=f'{log_path}/{title}.png')
+    #                                 #  , dest, ox, oy, title='Case_6_grid')

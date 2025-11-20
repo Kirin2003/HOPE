@@ -44,7 +44,7 @@ def get_rand_pos(origin_x, origin_y, angle_min, angle_max, radius_min, radius_ma
     return origin_x+cos(angle_rand)*radius_rand, origin_y+sin(angle_rand)*radius_rand
 
 
-def random_generate_vertical_parking_case(case_idx):
+def random_generate_vertical_parking_case(case_idx, save_dir):
     '''
     Generate the parameters that a bay parking case need.
     
@@ -250,15 +250,14 @@ def random_generate_vertical_parking_case(case_idx):
             'dest': [dest_x, dest_y, dest_yaw],
             'obstacles': obstacles
         }
-        case_dir = f'{LOG_DIR}/{timestamp}/data'
-        os.makedirs(case_dir, exist_ok=True)
-        case_path = f'{case_dir}/case_{case_idx}.npz'
+        os.makedirs(save_dir, exist_ok=True)
+        case_path = f'{save_dir}/case_{case_idx}.npz'
         save_case(case_data, case_path)
     else:
         # print(1)
-        return random_generate_vertical_parking_case(case_idx)
+        return random_generate_vertical_parking_case(case_idx, save_dir)
 
-def random_generate_parallel_parking_case(case_idx):
+def random_generate_parallel_parking_case(case_idx, save_dir):
     '''
     Generate the parameters that a parallel parking case need.
     
@@ -453,12 +452,11 @@ def random_generate_parallel_parking_case(case_idx):
             'dest': [dest_x, dest_y, dest_yaw],
             'obstacles': obstacles
         }
-        case_dir = f'{LOG_DIR}/{timestamp}/data'
-        os.makedirs(case_dir, exist_ok=True)
-        case_path = f'{case_dir}/parallel_extreme_case_{case_idx}.npz'
+        os.makedirs(save_dir, exist_ok=True)
+        case_path = f'{save_dir}/case_{case_idx}.npz'
         save_case(case_data, case_path)
     else:
-        return random_generate_parallel_parking_case(case_idx)
+        return random_generate_parallel_parking_case(case_idx, save_dir)
 
 
 def save_case(case_data, filename):
@@ -560,12 +558,14 @@ def obstacles_to_xy_lists(obstacles, resolution=XY_GRID_RESOLUTION):
 
 if __name__ == '__main__':
     """test random_generate_vertical_parking_case() function, average time: 0.004s"""
-    # case_num = 1000
-    # gen_time = time.time()
-    # for i in range(case_num):
-    #     random_generate_vertical_parking_case(i)
-    # gen_time = time.time() - gen_time
-    # print(f'average time for generation: {gen_time / case_num:.4f} s')
+    case_num = 1000
+    gen_time = time.time()
+    save_dir = 'log/eval/vertical_complex/data'
+    os.makedirs(save_dir, exist_ok=True)
+    for i in range(case_num):
+        random_generate_vertical_parking_case(i, save_dir)
+    gen_time = time.time() - gen_time
+    print(f'average time for generation: {gen_time / case_num:.4f} s')
 
     """test random_generate_parallel_parking_case() function, average time: 0.002s"""
     # case_num = 1000
@@ -577,13 +577,13 @@ if __name__ == '__main__':
 
 
     """test visual_case() function, average time: 0.3 s ? 1.25 s"""
-    case_path = 'log/eval/20251114_043028/data/parallel_extreme_case_0.npz'
-    # case_path = 'log/eval/20251113_143214/data/case_0.npz'
-    case_data = load_case(case_path)
-    visual_time = time.time()
-    visual_case(case_data)
-    visual_time = time.time() - visual_time
-    print(f'average time for visualization: {visual_time:.4f} s')
+    # case_path = 'log/eval/20251114_043028/data/parallel_extreme_case_0.npz'
+    # # case_path = 'log/eval/20251113_143214/data/case_0.npz'
+    # case_data = load_case(case_path)
+    # visual_time = time.time()
+    # visual_case(case_data)
+    # visual_time = time.time() - visual_time
+    # print(f'average time for visualization: {visual_time:.4f} s')
     
     """test obstacles_to_xy_lists() function"""
     # case_path = 'log/eval/20251113_143214/data/case_0.npz'

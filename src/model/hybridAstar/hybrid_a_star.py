@@ -23,15 +23,13 @@ import env.reeds_shepp as rsCurve
 from model.hybridAstar.car import move, check_car_collision, MAX_STEER, WB, plot_car, BUBBLE_R
 from configs import *
 
-YAW_GRID_RESOLUTION = np.deg2rad(15.0)  # [rad]
-MOTION_RESOLUTION = 0.1  # [m] path interpolate resolution
-N_STEER = 20  # number of steer command
+N_STEER = 11  # number of steer command
 
-SB_COST = 100.0  # switch back penalty cost
-BACK_COST = 5.0  # backward penalty cost
-STEER_CHANGE_COST = 5.0  # steer angle change penalty cost
-STEER_COST = 1.0  # steer angle change penalty cost
-H_COST = 5.0  # Heuristic cost
+SB_COST = 20.0  # switch back penalty cost
+BACK_COST = 1.0  # backward penalty cost
+STEER_CHANGE_COST = 0.5  # steer angle change penalty cost
+STEER_COST = 0.1  # steer angle change penalty cost
+H_COST = 1.0  # Heuristic cost
 
 show_animation = False
 

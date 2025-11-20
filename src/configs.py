@@ -202,4 +202,6 @@ CONFIGS_ACTION = {
 
 LOG_DIR = './log/eval'
 
-XY_GRID_RESOLUTION = 0.5 # [m]
+XY_GRID_RESOLUTION = 0.1 # [m]
+YAW_GRID_RESOLUTION = np.deg2rad(5.0)  # [rad]
+MOTION_RESOLUTION = 0.05  # [m] path interpolate resolution
